@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Neon Galaxy Orbs</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #03020f;
+    touch-action: none;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+onresize = resize;
+
+// EMPTY orb list
+let orbs = [];
+
+let isTouching = false;
+let tx = 0, ty = 0;
+
+// Create orb on touch
+function addOrb(x, y) {
+  orbs.push({
+    x,
+    y,
+    size: Math.random()*20 + 15,
+    vx: Math.random()*2 - 1,
+    vy: Math.random()*2 - 1,
+    hue: Math.random()*360
+  });
+}
+
+// Touch events
+document.addEventListener("touchstart", e=>{
+  let t = e.touches[0];
+  tx = t.clientX;
+  ty = t.clientY;
+  isTouching = true;
+  addOrb(tx,ty);
+});
+
+document.addEventListener("touchmove", e=>{
+  let t = e.touches[0];
+  tx = t.clientX;
+  ty = t.clientY;
+  isTouching = true;
+});
+
+document.addEventListener("touchend", ()=> isTouching = false);
+
+// Mouse
+document.addEventListener("mousedown", e=>{
+  tx = e.clientX;
+  ty = e.clientY;
+  isTouching = true;
+  addOrb(tx,ty);
+});
+
+document.addEventListener("mousemove", e=>{
+  if(isTouching){
+    tx = e.clientX;
+    ty = e.clientY;
+  }
+});
+
+document.addEventListener("mouseup", ()=> isTouching = false);
+
+// Draw orb
+function drawOrb(o){
+  ctx.save();
+  ctx.fillStyle = `hsla(${o.hue},100%,60%,0.9)`;
+  ctx.shadowColor = `hsla(${o.hue},100%,60%,1)`;
+  ctx.shadowBlur = 20;
+
+  ctx.beginPath();
+  ctx.arc(o.x, o.y, o.size, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function animate() {
+  ctx.fillStyle = "rgba(0,0,20,0.25)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Hold → add more orbs
+  if(isTouching) addOrb(tx, ty);
+
+  orbs.forEach((o, i) => {
+    o.x += o.vx;
+    o.y += o.vy;
+
+    // Bounce
+    if(o.x < o.size || o.x > canvas.width - o.size) o.vx *= -1;
+    if(o.y < o.size || o.y > canvas.height - o.size) o.vy *= -1;
+
+    // Push away from touch
+    if(isTouching){
+      let dx = o.x - tx;
+      let dy = o.y - ty;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+
+      if(dist < 150){
+        o.vx += dx / dist;
+        o.vy += dy / dist;
+      }
+    }
+
+    drawOrb(o);
+    o.hue += 1;
+  });
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+
+</body>
+</html>
